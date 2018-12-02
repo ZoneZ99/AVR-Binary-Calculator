@@ -3,13 +3,13 @@
    <General>
       <Build>2005</Build>
       <Position>
-         <top>158</top>
-         <bottom>633</bottom>
-         <left>46</left>
-         <right>603</right>
+         <top>125</top>
+         <bottom>600</bottom>
+         <left>892</left>
+         <right>1449</right>
       </Position>
-      <StayOnTop>0</StayOnTop>
-      <Target>ATMega128</Target>
+      <StayOnTop>1</StayOnTop>
+      <Target>ATmega8515</Target>
    </General>
    <Views>
       <LCD>
@@ -19,7 +19,7 @@
             <left>22</left>
          </Position>
          <DisplayConfig>
-            <columns>16</columns>
+            <columns>32</columns>
             <rows>2</rows>
             <bkColor>0xc1fa9d</bkColor>
             <size>2</size>
@@ -130,8 +130,8 @@
       <LEDs>
          <Name>LEDs1</Name>
          <Position>
-            <top>55</top>
-            <left>339</left>
+            <top>134</top>
+            <left>333</left>
          </Position>
          <Config index="0">
             <Color>Red</Color>

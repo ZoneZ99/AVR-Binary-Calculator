@@ -1,0 +1,8 @@
+BinaryCalculator/
+AvrBuild.bat
+BinaryCalculator.aps
+binarycalculator.aws
+BinaryCalculator.hex
+BinaryCalculator.map
+BinaryCalculator.obj
+labels.tmp
