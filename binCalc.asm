@@ -6,6 +6,11 @@
 .def EW = r23	; PORTA
 .def PB	= r24	; PORTB
 .def A = r25
+.def BUTTON0 = r17
+.def BUTTON1 = r18
+.def OPERAND1 = r19
+.def OPERAND2 = r20
+.def OPERATOR = r21
 .equ operation_number = 30
 
 
@@ -14,6 +19,10 @@
 ;=====================================================
 .org $00
 rjmp MAIN
+.org $01
+rjmp EXT_INT0
+.org $02
+rjmp EXT_INT1
 
 
 ;=====================================================
@@ -74,7 +83,7 @@ MAIN:
 	ldi PB, $01
 	out PORTB, PB
 	sbi	PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
 
 INIT_STACK:
 	ldi temp, low(RAMEND)
@@ -99,16 +108,18 @@ INIT_LCD_MAIN:
 
 INIT_LCD:
 	cbi PORTA, 1	; Reg. Select Pin = 0
+	ldi PB, 0b00011100
+	out PORTB, PB
 	ldi PB, 0x38	; 8 bit, 2 line, 5x8 dots
 	out PORTB,	PB
 	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
 	rcall DELAY_01
 	cbi PORTA, 1	; Reg. Select Pin = 0
 	ldi PB, 0x0E	; Display ON, cursor ON, blink OFF
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
 	rcall DELAY_01
 	rcall CLEAR_LCD
 	cbi PORTA, 1	; Reg. Select Pin = 0
@@ -146,7 +157,7 @@ WRITE_TEXT:	; Output text
 	ret
 
 CLEAR_LCD:
-	cbi PORTA, 1	; Reg. Select Pin = 1
+	cbi PORTA, 1	; Reg. Select Pin = 0
 	ldi PB, 0x01
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
@@ -166,8 +177,45 @@ ACTIVATE_SEI:
 EXIT:
 	rjmp EXIT
 
+EXT_INT0:
+	sbi PORTA, 1	; Reg. Select Pin = 1
+	cbi PORTA, 2	; Read/Write Pin = 0
+	ldi PB, 0x30	; Write 0
+	out PORTB, PB
+	sbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
+	;rcall CURSOR_SHIFT_LEFT
+	reti
+	
+EXT_INT1:
+	sbi PORTA, 1	; Reg. Select Pin = 1
+	cbi PORTA, 2	; Read/Write Pin = 0
+	ldi PB, 0x31	; Write 1
+	out PORTB, PB
+	sbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
+	;rcall CURSOR_SHIFT_LEFT
+	reti
+
+;CURSOR_SHIFT_LEFT:
+	;cbi PORTA, 1	; Reg. Select Pin = 0
+	;cbi PORTA, 2	; Read/Write Pin = 0
+	;ldi PB, 0b00010000 	; Shift cursor to the left
+	;out PORTB, PB
+	;sbi PORTA, 0	; Enable Pin = 1
+	;cbi PORTA, 0	; Enable Pin = 0
+	;rcall DELAY_01
+	;cbi PORTA, 1	; Reg. Select Pin = 0
+	;cbi PORTA, 2	; Read/Write Pin = 0
+	;ldi PB, 0b00010000 	; Shift cursor to the left
+	;out PORTB, PB
+	;sbi PORTA, 0	; Enable Pin = 1
+	;cbi PORTA, 0	; Enable Pin = 0
+	;rcall DELAY_01
+	;ret	
+
 ;=====================================================
 ; DATA
 ;=====================================================
 opening:
-.db "Welcome to Binary Calculator!", 0
+.db "BinCalc!", 0
