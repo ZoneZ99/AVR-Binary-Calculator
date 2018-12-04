@@ -6,10 +6,10 @@
 .def EW = r23	; PORTA
 .def PB	= r24	; PORTB
 .def A = r25
-.def OPERAND1 = r19
-.def OPERAND2 = r20
+.def TEMPOPERAND = r18
+.def OPERAND = r19
 .def OPERATOR = r21
-.def OPERANDCOUNT = r22
+.def NUMBEROFBIT = r22
 .equ operation_number = 30
 
 
@@ -90,6 +90,11 @@ INIT_STACK:
 	ldi temp, high(RAMEND)
 	out SPH, temp
 
+INIT_BUTTONS:
+	clr temp
+	out DDRC, temp	; Set port C as input
+	out DDRE, temp	; Set port E as input
+
 INIT_INTERRUPT:
 	ldi r17, 0b11000000
 	out GICR, r17
@@ -113,20 +118,20 @@ INIT_LCD:
 	out PORTB,	PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	rcall DELAY_01
+	;rcall DELAY_01
 	cbi PORTA, 1	; Reg. Select Pin = 0
 	ldi PB, 0x0E	; Display ON, cursor ON, blink OFF
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	rcall DELAY_01
+	;rcall DELAY_01
 	rcall CLEAR_LCD
 	cbi PORTA, 1	; Reg. Select Pin = 0
 	ldi PB, 0x06	; Increase cursor, display scroll OFF
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	rcall DELAY_01
+	;rcall DELAY_01
 	ret
 
 
@@ -152,7 +157,7 @@ WRITE_TEXT:	; Output text
 	out PORTB, A	
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	rcall DELAY_01
+	;rcall DELAY_01
 	ret
 
 CLEAR_LCD:
@@ -161,23 +166,29 @@ CLEAR_LCD:
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	rcall DELAY_01
+	;rcall DELAY_01
 	ret
 
 DELAY_CALL:
-	rcall DELAY_02
+	;rcall DELAY_02
 	rcall CLEAR_LCD
 	rcall CURSOR_SHIFT_LEFT
-	rcall DELAY_02
+	;rcall DELAY_02
 	rjmp ACTIVATE_SEI
 
 ACTIVATE_SEI:
 	sei
 
-EXIT:
+EXIT:	
+	;in r27, PINC
+	;cpi r27, 0b00000001
+	;breq SOMETHING
 	rjmp EXIT
 
 EXT_INT0:
+	ldi r20, 1
+	add NUMBEROFBIT, r20
+
 	sbi PORTA, 1	; Reg. Select Pin = 1
 	cbi PORTA, 2	; Read/Write Pin = 0
 	ldi PB, 0x30	; Write 0
@@ -188,12 +199,36 @@ EXT_INT0:
 	reti
 	
 EXT_INT1:
+	ldi TEMPOPERAND, 1
+	add r20, NUMBEROFBIT
+	ldi r27, 2
+	cpi NUMBEROFBIT, 0	; Check if the input bit is the zero bit
+	brne POWER_OF_TWO	; If not, add 2^n to OPERAND
+	ldi OPERAND, 1
+	rjmp WRITE_1
+
+; Subroutine to add 2^n to OPERAND if n > 1
+POWER_OF_TWO:
+	lsl TEMPOPERAND	; Multiply by two
+	dec r20
+	brne POWER_OF_TWO
+	lsr TEMPOPERAND	; Divide by two
+	add OPERAND, TEMPOPERAND
+	rjmp WRITE_1
+
+WRITE_1:
+	clr TEMPOPERAND
+
 	sbi PORTA, 1	; Reg. Select Pin = 1
 	cbi PORTA, 2	; Read/Write Pin = 0
 	ldi PB, 0x31	; Write 1
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
+
+	ldi r20, 1
+	add NUMBEROFBIT, r20
+
 	rcall CURSOR_SHIFT_LEFT
 	reti
 
