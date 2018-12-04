@@ -168,6 +168,7 @@ CLEAR_LCD:
 DELAY_CALL:
 	rcall DELAY_02
 	rcall CLEAR_LCD
+	rcall CURSOR_SHIFT_LEFT
 	rcall DELAY_02
 	rjmp ACTIVATE_SEI
 
@@ -184,7 +185,7 @@ EXT_INT0:
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	;rcall CURSOR_SHIFT_LEFT
+	rcall CURSOR_SHIFT_LEFT
 	reti
 	
 EXT_INT1:
@@ -194,25 +195,35 @@ EXT_INT1:
 	out PORTB, PB
 	sbi PORTA, 0	; Enable Pin = 1
 	cbi PORTA, 0	; Enable Pin = 0
-	;rcall CURSOR_SHIFT_LEFT
+	rcall CURSOR_SHIFT_LEFT
 	reti
 
-;CURSOR_SHIFT_LEFT:
-	;cbi PORTA, 1	; Reg. Select Pin = 0
-	;cbi PORTA, 2	; Read/Write Pin = 0
-	;ldi PB, 0b00010000 	; Shift cursor to the left
-	;out PORTB, PB
-	;sbi PORTA, 0	; Enable Pin = 1
-	;cbi PORTA, 0	; Enable Pin = 0
+CURSOR_SHIFT_LEFT:
+	cbi PORTA, 1	; Reg. Select Pin = 0
+	cbi PORTA, 2	; Read/Write Pin = 0
+	ldi PB, 0b00010000 	; Shift cursor to the left
+	out PORTB, PB
+	sbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
-	;cbi PORTA, 1	; Reg. Select Pin = 0
-	;cbi PORTA, 2	; Read/Write Pin = 0
-	;ldi PB, 0b00010000 	; Shift cursor to the left
-	;out PORTB, PB
-	;sbi PORTA, 0	; Enable Pin = 1
-	;cbi PORTA, 0	; Enable Pin = 0
+
+	cbi PORTA, 1
+	cbi PORTA, 2
+	ldi PB, 0b00011100	; Shift the entire display to the right
+	out PORTB, PB
+	sbi PORTA, 0
+	cbi PORTA, 0
 	;rcall DELAY_01
-	;ret	
+
+	cbi PORTA, 1	; Reg. Select Pin = 0
+	cbi PORTA, 2	; Read/Write Pin = 0
+	ldi PB, 0b00010000 	; Shift cursor to the left
+	out PORTB, PB
+	sbi PORTA, 0	; Enable Pin = 1
+	cbi PORTA, 0	; Enable Pin = 0
+	;rcall DELAY_01
+
+	ret	
 
 ;=====================================================
 ; DATA
