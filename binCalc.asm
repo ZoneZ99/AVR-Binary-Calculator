@@ -8,6 +8,8 @@
 .def A = r25
 .def TEMPOPERAND = r18
 .def OPERAND = r19
+.def USEDOPERAND1 = r14
+.def USEDOPERAND2 = r15
 .def OPERATOR = r21
 .def NUMBEROFBIT = r22
 .equ operation_number = 30
@@ -180,9 +182,44 @@ ACTIVATE_SEI:
 	sei
 
 EXIT:	
-	;in r27, PINC
-	;cpi r27, 0b00000001
-	;breq SOMETHING
+	in temp, PINC
+
+	cpi temp, 0b00000100
+	breq ACTIVATE_TAMBAH_LED
+
+	cpi temp, 0b00001000
+	breq ACTIVATE_KURANG_LED
+
+	cpi temp, 0b00010000
+	breq ACTIVATE_KALI_LED
+
+	cpi temp, 0b00100000
+	breq ACTIVATE_BAGI_LED
+
+	rjmp EXIT
+
+ACTIVATE_TAMBAH_LED:
+	mov USEDOPERAND1, OPERAND
+	ldi temp, 0b00000001
+	out PORTE, temp
+	rjmp EXIT
+
+ACTIVATE_KURANG_LED:
+	mov USEDOPERAND1, OPERAND
+	ldi temp, 0b00000010
+	out PORTE, temp
+	rjmp EXIT
+
+ACTIVATE_KALI_LED:
+	mov USEDOPERAND1, OPERAND
+	ldi temp, 0b00000100
+	out PORTE, temp
+	rjmp EXIT
+
+ACTIVATE_BAGI_LED:
+	mov USEDOPERAND1, OPERAND
+	ldi temp, 0b00001000
+	out PORTE, temp
 	rjmp EXIT
 
 EXT_INT0:
@@ -201,7 +238,6 @@ EXT_INT0:
 EXT_INT1:
 	ldi TEMPOPERAND, 1
 	add r20, NUMBEROFBIT
-	ldi r27, 2
 	cpi NUMBEROFBIT, 0	; Check if the input bit is the zero bit
 	brne POWER_OF_TWO	; If not, add 2^n to OPERAND
 	ldi OPERAND, 1
