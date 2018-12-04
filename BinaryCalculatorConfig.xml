@@ -3,10 +3,10 @@
    <General>
       <Build>2005</Build>
       <Position>
-         <top>112</top>
-         <bottom>587</bottom>
-         <left>754</left>
-         <right>1311</right>
+         <top>111</top>
+         <bottom>586</bottom>
+         <left>582</left>
+         <right>1356</right>
       </Position>
       <StayOnTop>1</StayOnTop>
       <Target>ATmega8515</Target>
@@ -71,7 +71,7 @@
             <Name>DELETE</Name>
             <PortPin>
                <Port>PORTC</Port>
-               <Bit>2</Bit>
+               <Bit>0</Bit>
             </PortPin>
             <Invert>0</Invert>
          </Config>
@@ -79,7 +79,7 @@
             <Name>CLEAR</Name>
             <PortPin>
                <Port>PORTC</Port>
-               <Bit>3</Bit>
+               <Bit>1</Bit>
             </PortPin>
             <Invert>0</Invert>
          </Config>
@@ -89,14 +89,14 @@
       <Buttons>
          <Name>Buttons2</Name>
          <Position>
-            <top>135</top>
-            <left>168</left>
+            <top>134</top>
+            <left>174</left>
          </Position>
          <Config index="0">
             <Name>+</Name>
             <PortPin>
                <Port>PORTC</Port>
-               <Bit>4</Bit>
+               <Bit>2</Bit>
             </PortPin>
             <Invert>0</Invert>
          </Config>
@@ -104,7 +104,7 @@
             <Name>-</Name>
             <PortPin>
                <Port>PORTC</Port>
-               <Bit>5</Bit>
+               <Bit>3</Bit>
             </PortPin>
             <Invert>0</Invert>
          </Config>
@@ -112,7 +112,7 @@
             <Name>x</Name>
             <PortPin>
                <Port>PORTC</Port>
-               <Bit>6</Bit>
+               <Bit>4</Bit>
             </PortPin>
             <Invert>0</Invert>
          </Config>
@@ -120,6 +120,47 @@
             <Name>/</Name>
             <PortPin>
                <Port>PORTC</Port>
+               <Bit>5</Bit>
+            </PortPin>
+            <Invert>0</Invert>
+         </Config>
+         <TrinaryGroupEnable index="0">0</TrinaryGroupEnable>
+         <TrinaryGroupEnable index="1">0</TrinaryGroupEnable>
+      </Buttons>
+      <Buttons>
+         <Name>Buttons3</Name>
+         <Position>
+            <top>135</top>
+            <left>333</left>
+         </Position>
+         <Config index="0">
+            <Name>CALCULATE</Name>
+            <PortPin>
+               <Port>PORTC</Port>
+               <Bit>6</Bit>
+            </PortPin>
+            <Invert>0</Invert>
+         </Config>
+         <Config index="1">
+            <Name>NEXT</Name>
+            <PortPin>
+               <Port>PORTC</Port>
+               <Bit>7</Bit>
+            </PortPin>
+            <Invert>0</Invert>
+         </Config>
+         <Config index="2">
+            <Name>[INACTIVE]</Name>
+            <PortPin>
+               <Port>PORTA</Port>
+               <Bit>7</Bit>
+            </PortPin>
+            <Invert>0</Invert>
+         </Config>
+         <Config index="3">
+            <Name>[INACTIVE]</Name>
+            <PortPin>
+               <Port>PORTA</Port>
                <Bit>7</Bit>
             </PortPin>
             <Invert>0</Invert>
@@ -130,8 +171,8 @@
       <LEDs>
          <Name>LEDs1</Name>
          <Position>
-            <top>134</top>
-            <left>333</left>
+            <top>96</top>
+            <left>494</left>
          </Position>
          <Config index="0">
             <Color>Red</Color>

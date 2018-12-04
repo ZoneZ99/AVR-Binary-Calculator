@@ -6,11 +6,10 @@
 .def EW = r23	; PORTA
 .def PB	= r24	; PORTB
 .def A = r25
-.def BUTTON0 = r17
-.def BUTTON1 = r18
 .def OPERAND1 = r19
 .def OPERAND2 = r20
 .def OPERATOR = r21
+.def OPERANDCOUNT = r22
 .equ operation_number = 30
 
 
@@ -229,4 +228,4 @@ CURSOR_SHIFT_LEFT:
 ; DATA
 ;=====================================================
 opening:
-.db "BinCalc!", 0
+.db "Welcome to Binary Calculator!", 0
