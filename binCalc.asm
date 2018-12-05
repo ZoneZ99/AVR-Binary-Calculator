@@ -40,12 +40,12 @@
 ;=====================================================
 ; RESET and INTERRUPT VECTORS
 ;=====================================================
-.org $00
-rjmp MAIN
-.org $01
-rjmp EXT_INT0
-.org $02
-rjmp EXT_INT1
+.org 	$00
+rjmp 	MAIN
+.org 	$01
+rjmp 	EXT_INT0
+.org 	$02
+rjmp	EXT_INT1
 
 
 ;=====================================================
@@ -58,12 +58,12 @@ DELAY_00:
 	; Delay 4 000 cycles
 	; 500us at 8.0 MHz
 
-	    ldi  r18, 6
-	    ldi  r19, 49
-	L0: dec  r19
-	    brne L0
-	    dec  r18
-	    brne L0
+	    ldi 	r18, 6
+	    ldi 	r19, 49
+	L0: dec		r19
+	    brne 	L0
+	    dec  	r18
+	    brne 	L0
 	ret
 
 DELAY_01:
@@ -73,12 +73,12 @@ DELAY_01:
 	; DELAY_CONTROL 40 000 cycles
 	; 5ms at 8.0 MHz
 
-	    ldi  r18, 52
-	    ldi  r19, 242
-	L1: dec  r19
-	    brne L1
-	    dec  r18
-	    brne L1
+	    ldi  	r18, 52
+	    ldi  	r19, 242
+	L1: dec  	r19
+	    brne 	L1
+	    dec  	r18
+	    brne 	L1
 	    nop
 	ret
 
@@ -89,12 +89,12 @@ DELAY_02:
 ; Delay 160 000 cycles
 ; 20ms at 8.0 MHz
 
-	    ldi  r18, 208
-	    ldi  r19, 202
-	L2: dec  r19
-	    brne L2
-	    dec  r18
-	    brne L2
+	    ldi  	r18, 208
+	    ldi  	r19, 202
+	L2: dec  	r19
+	    brne 	L2
+	    dec  	r18
+	    brne 	L2
 	    nop
 		ret
 
@@ -102,281 +102,309 @@ DELAY_02:
 ; CODE SEGMENT
 ;=====================================================
 MAIN:
-	cbi PORTA,	1	; Reg. Select Pin = 0
-	ldi PB, $01
-	out PORTB, PB
-	sbi	PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	cbi 	PORTA,	1	; Reg. Select Pin = 0
+	ldi 	PB, $01
+	out 	PORTB, PB
+	sbi		PORTA, 0	; Enable Pin = 1
+	cbi 	PORTA, 0	; Enable Pin = 0
 
 INIT_STACK:
-	ldi temp, low(RAMEND)
-	out SPL, temp
-	ldi temp, high(RAMEND)
-	out SPH, temp
+	ldi 	temp, low(RAMEND)
+	out 	SPL, temp
+	ldi 	temp, high(RAMEND)
+	out 	SPH, temp
 
 INIT_BUTTONS:
-	clr temp
-	out DDRC, temp	; Set port C as input
-	out DDRE, temp	; Set port E as input
+	clr 	temp
+	out 	DDRC, temp	; Set port C as input
+	out 	DDRE, temp	; Set port E as input
 
 INIT_INTERRUPT:
-	ldi r17, 0b11000000
-	out GICR, r17
-	ldi r17, 0b00001010
-	out MCUCR, r17
+	ldi 	r17, 0b11000000
+	out 	GICR, r17
+	ldi 	r17, 0b00001010
+	out 	MCUCR, r17
 
 INIT_LCD_MAIN:
-	rcall INIT_LCD
+	rcall 	INIT_LCD
 
-	ser temp
-	out DDRA, temp	; Set port A as output
-	out DDRB, temp	; Set port B as output
+	ser 	temp
+	out 	DDRA, temp	; Set port A as output
+	out 	DDRB, temp	; Set port B as output
 	
-	rjmp INPUT_WELCOME
+	rjmp 	INPUT_WELCOME
 
 INIT_LCD:
-	cbi PORTA, 1	; Reg. Select Pin = 0
-	ldi PB, 0b00011100
-	out PORTB, PB
-	ldi PB, 0x38	; 8 bit, 2 line, 5x8 dots
-	out PORTB,	PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	cbi 	PORTA, 1	; Reg. Select Pin = 0
+	ldi 	PB, 0b00011100
+	out 	PORTB, PB
+	ldi 	PB, 0x38	; 8 bit, 2 line, 5x8 dots
+	out 	PORTB,	PB
+	sbi 	PORTA, 0	; Enable Pin = 1
+	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
-	cbi PORTA, 1	; Reg. Select Pin = 0
-	ldi PB, 0x0E	; Display ON, cursor ON, blink OFF
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	cbi 	PORTA, 1	; Reg. Select Pin = 0
+	ldi 	PB, 0x0E	; Display ON, cursor ON, blink OFF
+	out 	PORTB, PB
+	sbi 	PORTA, 0	; Enable Pin = 1
+	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
-	rcall CLEAR_LCD
-	cbi PORTA, 1	; Reg. Select Pin = 0
-	ldi PB, 0x06	; Increase cursor, display scroll OFF
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	rcall 	CLEAR_LCD
+	cbi 	PORTA, 1	; Reg. Select Pin = 0
+	ldi 	PB, 0x06	; Increase cursor, display scroll OFF
+	out 	PORTB, PB
+	sbi 	PORTA, 0	; Enable Pin = 1
+	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
 	ret
 
 
-INPUT_WELCOME:	; Write opening text to LCD
-	ldi ZH, high(2*opening)
-	ldi ZL, low(2*opening)
+INPUT_WELCOME:			; Write opening text to LCD
+	ldi 	ZH, high(2*opening)
+	ldi 	ZL, low(2*opening)
 
-	rjmp LOADBYTE_OPENING
+	rjmp 	LOADBYTE_OPENING
 
 LOADBYTE_OPENING:
-	lpm 	; Load byte from program memory to r0
+	lpm 				; Load byte from program memory to r0
 	
-	tst	r0	; Check if we've reached the end of the message
+	tst		r0			; Check if we've reached the end of the message
 	breq DELAY_CALL
 
-	mov A, r0	; Put the character into Port B
-	rcall WRITE_TEXT
-	adiw ZL, 1	; Increment Z registers
-	rjmp LOADBYTE_OPENING
+	mov 	A, r0		; Put the character into Port B
+	rcall 	WRITE_TEXT
+	adiw 	ZL, 1		; Increment Z registers
+	rjmp 	LOADBYTE_OPENING
 
-WRITE_TEXT:	; Output text
-	sbi PORTA, 1	; Reg. Select Pin = 1
-	out PORTB, A	
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+WRITE_TEXT:				; Output text
+	sbi 	PORTA, 1	; Reg. Select Pin = 1
+	out 	PORTB, A	
+	sbi 	PORTA, 0	; Enable Pin = 1
+	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
 	ret
 
 CLEAR_LCD:
-	cbi PORTA, 1	; Reg. Select Pin = 0
-	ldi PB, 0x01
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	cbi 	PORTA, 1	; Reg. Select Pin = 0
+	ldi 	PB, 0x01
+	out 	PORTB, PB
+	sbi 	PORTA, 0	; Enable Pin = 1
+	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
 	ret
 
 DELAY_CALL:
 	;rcall DELAY_02
-	rcall CLEAR_LCD
-	rcall CURSOR_SHIFT_LEFT
+	rcall 	CLEAR_LCD
+	rcall 	CURSOR_SHIFT_LEFT
 	;rcall DELAY_02
-	rjmp ACTIVATE_SEI
+	rjmp 	ACTIVATE_SEI
 
 ACTIVATE_SEI:
 	sei
 
 EXIT:	
-	in temp, PINC
+	in 		temp, PINC
 
-	cpi temp, 0b00000100	; Check if "+" button is pressed
-	breq ACTIVATE_TAMBAH_LED
+	cpi 	temp, 0b00000100	; Check if "+" button is pressed
+	breq 	ACTIVATE_TAMBAH_LED
 
-	cpi temp, 0b00001000	; Check if "-" button is pressed
-	breq ACTIVATE_KURANG_LED
+	cpi 	temp, 0b00001000	; Check if "-" button is pressed
+	breq 	ACTIVATE_KURANG_LED
 
-	cpi temp, 0b00010000	; Check if "x" button is pressed
-	breq ACTIVATE_KALI_LED
+	cpi 	temp, 0b00010000	; Check if "x" button is pressed
+	breq 	ACTIVATE_KALI_LED
 
-	cpi temp, 0b00100000	; Check if "/" button is pressed
-	breq ACTIVATE_BAGI_LED
+	cpi 	temp, 0b00100000	; Check if "/" button is pressed
+	breq 	ACTIVATE_BAGI_LED
 
-	cpi temp, 0b01000000	; Check if "CALCULATE" button is pressed
-	breq PROCEED_CALCULATE
+	cpi 	temp, 0b01000000	; Check if "CALCULATE" button is pressed
+	breq 	PROCEED_CALCULATE
 
-	rjmp EXIT
+	rjmp 	EXIT
 
 ACTIVATE_TAMBAH_LED:
-	add USEDOPERAND1, USEDOPERAND2
-	ldi temp, 0b00000001
-	ldi OPERATOR, 1	; OPERATOR 1 = TAMBAH
-	out PORTE, temp
-	ldi USEDOPERAND2, 0
-	rcall CLEAR_LCD
-	rcall CURSOR_SHIFT_LEFT
-	ldi NUMBEROFBIT, 0
-	rjmp EXIT
+	add 	USEDOPERAND1, USEDOPERAND2
+	ldi 	temp, 0b00000001
+	ldi 	OPERATOR, 1		; OPERATOR 1 = TAMBAH
+	out 	PORTE, temp
+	ldi 	USEDOPERAND2, 0
+	rcall 	CLEAR_LCD
+	rcall 	CURSOR_SHIFT_LEFT
+	ldi 	NUMBEROFBIT, 0
+	rjmp 	EXIT
 
 ACTIVATE_KURANG_LED:
-	add USEDOPERAND1, USEDOPERAND2
-	ldi temp, 0b00000010
-	ldi OPERATOR, 2	; OPERATOR 2 = KURANG
-	out PORTE, temp
-	ldi USEDOPERAND2, 0
-	rcall CLEAR_LCD
-	rcall CURSOR_SHIFT_LEFT
-	ldi NUMBEROFBIT, 0
-	rjmp EXIT
+	add 	USEDOPERAND1, USEDOPERAND2
+	ldi 	temp, 0b00000010
+	ldi 	OPERATOR, 2		; OPERATOR 2 = KURANG
+	out 	PORTE, temp
+	ldi 	USEDOPERAND2, 0
+	rcall 	CLEAR_LCD
+	rcall 	CURSOR_SHIFT_LEFT
+	ldi 	NUMBEROFBIT, 0
+	rjmp 	EXIT
 
 ACTIVATE_KALI_LED:
-	add USEDOPERAND1, USEDOPERAND2
-	ldi temp, 0b00000100
-	ldi OPERATOR, 3	; OPERATOR 3 = KALI
-	out PORTE, temp
-	ldi USEDOPERAND2, 0
-	rcall CLEAR_LCD
-	rcall CURSOR_SHIFT_LEFT
-	ldi NUMBEROFBIT, 0
-	rjmp EXIT
+	add 	USEDOPERAND1, USEDOPERAND2
+	ldi 	temp, 0b00000100
+	ldi 	OPERATOR, 3		; OPERATOR 3 = KALI
+	out 	PORTE, temp
+	ldi 	USEDOPERAND2, 0
+	rcall 	CLEAR_LCD
+	rcall 	CURSOR_SHIFT_LEFT
+	ldi 	NUMBEROFBIT, 0
+	rjmp 	EXIT
 
 ACTIVATE_BAGI_LED:
-	add USEDOPERAND1, USEDOPERAND2
-	ldi temp, 0b00001000
-	ldi OPERATOR, 4	; OPERATOR 4 = BAGI
-	out PORTE, temp
-	ldi USEDOPERAND2, 0
-	rcall CLEAR_LCD
-	rcall CURSOR_SHIFT_LEFT
-	ldi NUMBEROFBIT, 0
-	rjmp EXIT
+	add 	USEDOPERAND1, USEDOPERAND2
+	ldi 	temp, 0b00001000
+	ldi 	OPERATOR, 4		; OPERATOR 4 = BAGI
+	out 	PORTE, temp
+	ldi 	USEDOPERAND2, 0
+	rcall 	CLEAR_LCD
+	rcall 	CURSOR_SHIFT_LEFT
+	ldi 	NUMBEROFBIT, 0
+	rjmp 	EXIT
 
 PROCEED_CALCULATE:
-	ldi temp, 0b00000000
-	out PORTE, temp
+	ldi 	temp, 0b00000000
+	out 	PORTE, temp
 
-	cpi OPERATOR, 0	; Check if there's no assigned operator
-	breq EXIT
+	cpi 	OPERATOR, 0		; Check if there's no assigned operator
+	breq 	EXIT
 	
-	cpi OPERATOR, 1	; Check if OPERATOR = TAMBAH
-	breq CALCULATE_TAMBAH
+	cpi 	OPERATOR, 1		; Check if OPERATOR = TAMBAH
+	breq 	CALCULATE_TAMBAH
 
-	cpi OPERATOR, 2	; Check if OPERATOR = KURANG
-	breq CALCULATE_KURANG
+	cpi 	OPERATOR, 2		; Check if OPERATOR = KURANG
+	breq 	CALCULATE_KURANG
 
-	cpi OPERATOR, 3	; Check if OPERATOR = KALI
-	breq CALCULATE_KALI
+	cpi 	OPERATOR, 3		; Check if OPERATOR = KALI
+	breq 	CALCULATE_KALI
 
-	;cpi OPERATOR, 4	; Check if OPERATOR = BAGI
-	;breq CALCULATE_BAGI
+	cpi 	OPERATOR, 4		; Check if OPERATOR = BAGI
+	breq 	CALCULATE_BAGI
 
 CALCULATE_TAMBAH:
-	ldi OPERATOR, 0
-	mov RESULT, USEDOPERAND1
-	add RESULT, USEDOPERAND2
-	rjmp EXIT
+	ldi 	OPERATOR, 0
+	mov 	RESULT, USEDOPERAND1
+	add 	RESULT, USEDOPERAND2
+	rjmp 	EXIT
 
 CALCULATE_KURANG:
-	ldi OPERATOR, 0
-	mov RESULT, USEDOPERAND1
-	sub RESULT, USEDOPERAND2
-	rjmp EXIT
+	ldi 	OPERATOR, 0
+	mov 	RESULT, USEDOPERAND1
+	sub 	RESULT, USEDOPERAND2
+	rjmp 	EXIT
 
 CALCULATE_KALI:
-	ldi OPERATOR, 0
-	mov RESULT, USEDOPERAND1
-	mul RESULT, USEDOPERAND2
-	mov RESULT, r0
-	rjmp EXIT
+	ldi 	OPERATOR, 0
+	mov 	RESULT, USEDOPERAND1
+	mul 	RESULT, USEDOPERAND2
+	mov 	RESULT, r0
+	rjmp 	EXIT
 
-;CALCULATE_BAGI:
-;	nop
+; Subroutine to divide two single-byte numbers
+; Taken from https://sites.google.com/site/avrasmintro/home/2b-basic-math
+; Registers used:
+; - r0 to hold answer
+; - r2 to hold remainder
+; - r20 to hold bit counter
+CALCULATE_BAGI:
+	ldi 	OPERATOR, 0
+	mov 	RESULT, USEDOPERAND1
+
+	DIVIDE:
+		ldi		r20, 9		; Load bit counter
+		sub 	r2, r2		; Clear remainder and carry
+		mov 	r0, RESULT
+	LOOP:
+		rol 	r0			; Shift the answer to the left
+		dec 	r20	
+		breq 	DONE
+		rol 	r2			; Shift the remainder to the left
+		sub 	r2, USEDOPERAND2	; Subtract divisor from the remainder
+		brcc 	SKIP		; If the result is negative...
+		add 	r2, USEDOPERAND2	; Reverse the subtraction to try again
+		clc					; Clear Carry Flag so zero shifted in dividend
+		rjmp 	LOOP
+	SKIP:
+		sec					; Set Carry Flag to be shifted into dividend
+		rjmp 	LOOP
+	DONE:
+		mov		RESULT, r0
+		rjmp 	EXIT
 
 EXT_INT0:
-	ldi r20, 1
-	add NUMBEROFBIT, r20
+	ldi 	r20, 1
+	add 	NUMBEROFBIT, r20
 
-	sbi PORTA, 1	; Reg. Select Pin = 1
-	cbi PORTA, 2	; Read/Write Pin = 0
-	ldi PB, 0x30	; Write 0
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
-	rcall CURSOR_SHIFT_LEFT
+	sbi 	PORTA, 1		; Reg. Select Pin = 1
+	cbi 	PORTA, 2		; Read/Write Pin = 0
+	ldi 	PB, 0x30		; Write 0
+	out 	PORTB, PB
+	sbi 	PORTA, 0		; Enable Pin = 1
+	cbi 	PORTA, 0		; Enable Pin = 0
+	rcall 	CURSOR_SHIFT_LEFT
 	reti
 	
 EXT_INT1:
-	ldi TEMPOPERAND, 1
-	add r20, NUMBEROFBIT
-	cpi NUMBEROFBIT, 0	; Check if the input bit is the zero bit
-	brne POWER_OF_TWO	; If not, add 2^n to OPERAND
-	ldi USEDOPERAND2, 1
-	rjmp WRITE_1
+	ldi 	TEMPOPERAND, 1
+	add 	r20, NUMBEROFBIT
+	cpi 	NUMBEROFBIT, 0	; Check if the input bit is the zero bit
+	brne 	POWER_OF_TWO	; If not, add 2^n to OPERAND
+	ldi 	USEDOPERAND2, 1
+	rjmp 	WRITE_1
 
 ; Subroutine to add 2^n to OPERAND if n > 1
 POWER_OF_TWO:
-	lsl TEMPOPERAND	; Multiply by two
-	dec r20
-	brne POWER_OF_TWO
-	lsr TEMPOPERAND	; Divide by two
-	add USEDOPERAND2, TEMPOPERAND
-	rjmp WRITE_1
+	lsl 	TEMPOPERAND		; Multiply by two
+	dec 	r20
+	brne 	POWER_OF_TWO
+	lsr 	TEMPOPERAND		; Divide by two
+	add 	USEDOPERAND2, TEMPOPERAND
+	rjmp 	WRITE_1
 
 WRITE_1:
-	clr TEMPOPERAND
+	clr 	TEMPOPERAND
 
-	sbi PORTA, 1	; Reg. Select Pin = 1
-	cbi PORTA, 2	; Read/Write Pin = 0
-	ldi PB, 0x31	; Write 1
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	sbi 	PORTA, 1		; Reg. Select Pin = 1
+	cbi 	PORTA, 2		; Read/Write Pin = 0
+	ldi 	PB, 0x31		; Write 1
+	out 	PORTB, PB
+	sbi 	PORTA, 0		; Enable Pin = 1
+	cbi 	PORTA, 0		; Enable Pin = 0
 
-	ldi r20, 1
-	add NUMBEROFBIT, r20
+	ldi 	r20, 1
+	add 	NUMBEROFBIT, r20
 
-	rcall CURSOR_SHIFT_LEFT
+	rcall 	CURSOR_SHIFT_LEFT
 	reti
 
 CURSOR_SHIFT_LEFT:
-	cbi PORTA, 1	; Reg. Select Pin = 0
-	cbi PORTA, 2	; Read/Write Pin = 0
-	ldi PB, 0b00010000 	; Shift cursor to the left
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	cbi 	PORTA, 1		; Reg. Select Pin = 0
+	cbi 	PORTA, 2		; Read/Write Pin = 0
+	ldi 	PB, 0b00010000 	; Shift cursor to the left
+	out 	PORTB, PB
+	sbi 	PORTA, 0		; Enable Pin = 1
+	cbi 	PORTA, 0		; Enable Pin = 0
 	;rcall DELAY_01
 
-	cbi PORTA, 1
-	cbi PORTA, 2
-	ldi PB, 0b00011100	; Shift the entire display to the right
-	out PORTB, PB
-	sbi PORTA, 0
-	cbi PORTA, 0
+	cbi 	PORTA, 1
+	cbi 	PORTA, 2
+	ldi 	PB, 0b00011100	; Shift the entire display to the right
+	out 	PORTB, PB
+	sbi 	PORTA, 0
+	cbi 	PORTA, 0
 	;rcall DELAY_01
 
-	cbi PORTA, 1	; Reg. Select Pin = 0
-	cbi PORTA, 2	; Read/Write Pin = 0
-	ldi PB, 0b00010000 	; Shift cursor to the left
-	out PORTB, PB
-	sbi PORTA, 0	; Enable Pin = 1
-	cbi PORTA, 0	; Enable Pin = 0
+	cbi 	PORTA, 1		; Reg. Select Pin = 0
+	cbi 	PORTA, 2		; Read/Write Pin = 0
+	ldi 	PB, 0b00010000 	; Shift cursor to the left
+	out 	PORTB, PB
+	sbi 	PORTA, 0		; Enable Pin = 1
+	cbi 	PORTA, 0		; Enable Pin = 0
 	;rcall DELAY_01
 
 	ret	
