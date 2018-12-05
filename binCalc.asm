@@ -1,4 +1,26 @@
 ;=====================================================
+; Simple Binary Calculator
+; Group A16
+; 	- Farhan Azyumardhi Azmi 		1706979234
+;	- Muhammad Nadhirsyah Indra 	1706039383
+;	- Siti Aulia Rahmatussyifa		1706022073
+;=====================================================
+
+;=====================================================
+; Processor		: ATMega8515
+; Compiler		: AVRASM
+;=====================================================
+
+;=====================================================
+; KNOWN BUGS
+; - Register can only hold 127 signed decimal from input
+;	Ex: 1111 1111 is saved as 127 signed, because
+;	S flag in SREG is turned on. Nevertheless,
+;	the result of every operation can hold 255 unsigned 
+;	decimal.
+;=====================================================
+
+;=====================================================
 ; DEFINITIONS
 ;=====================================================
 .include "m8515def.inc"
@@ -9,7 +31,7 @@
 .def TEMPOPERAND = r18
 .def USEDOPERAND1 = r14
 .def USEDOPERAND2 = r19
-.def NEXTOPERAND = r15
+.def RESULT = r15
 .def OPERATOR = r21
 .def NUMBEROFBIT = r22
 .equ operation_number = 30
@@ -184,22 +206,25 @@ ACTIVATE_SEI:
 EXIT:	
 	in temp, PINC
 
-	cpi temp, 0b00000100
+	cpi temp, 0b00000100	; Check if "+" button is pressed
 	breq ACTIVATE_TAMBAH_LED
 
-	cpi temp, 0b00001000
+	cpi temp, 0b00001000	; Check if "-" button is pressed
 	breq ACTIVATE_KURANG_LED
 
-	cpi temp, 0b00010000
+	cpi temp, 0b00010000	; Check if "x" button is pressed
 	breq ACTIVATE_KALI_LED
 
-	cpi temp, 0b00100000
+	cpi temp, 0b00100000	; Check if "/" button is pressed
 	breq ACTIVATE_BAGI_LED
+
+	cpi temp, 0b01000000	; Check if "CALCULATE" button is pressed
+	breq PROCEED_CALCULATE
 
 	rjmp EXIT
 
 ACTIVATE_TAMBAH_LED:
-	mov USEDOPERAND1, USEDOPERAND2
+	add USEDOPERAND1, USEDOPERAND2
 	ldi temp, 0b00000001
 	ldi OPERATOR, 1	; OPERATOR 1 = TAMBAH
 	out PORTE, temp
@@ -210,7 +235,7 @@ ACTIVATE_TAMBAH_LED:
 	rjmp EXIT
 
 ACTIVATE_KURANG_LED:
-	mov USEDOPERAND1, USEDOPERAND2
+	add USEDOPERAND1, USEDOPERAND2
 	ldi temp, 0b00000010
 	ldi OPERATOR, 2	; OPERATOR 2 = KURANG
 	out PORTE, temp
@@ -221,7 +246,7 @@ ACTIVATE_KURANG_LED:
 	rjmp EXIT
 
 ACTIVATE_KALI_LED:
-	mov USEDOPERAND1, USEDOPERAND2
+	add USEDOPERAND1, USEDOPERAND2
 	ldi temp, 0b00000100
 	ldi OPERATOR, 3	; OPERATOR 3 = KALI
 	out PORTE, temp
@@ -232,7 +257,7 @@ ACTIVATE_KALI_LED:
 	rjmp EXIT
 
 ACTIVATE_BAGI_LED:
-	mov USEDOPERAND1, USEDOPERAND2
+	add USEDOPERAND1, USEDOPERAND2
 	ldi temp, 0b00001000
 	ldi OPERATOR, 4	; OPERATOR 4 = BAGI
 	out PORTE, temp
@@ -241,6 +266,47 @@ ACTIVATE_BAGI_LED:
 	rcall CURSOR_SHIFT_LEFT
 	ldi NUMBEROFBIT, 0
 	rjmp EXIT
+
+PROCEED_CALCULATE:
+	ldi temp, 0b00000000
+	out PORTE, temp
+
+	cpi OPERATOR, 0	; Check if there's no assigned operator
+	breq EXIT
+	
+	cpi OPERATOR, 1	; Check if OPERATOR = TAMBAH
+	breq CALCULATE_TAMBAH
+
+	cpi OPERATOR, 2	; Check if OPERATOR = KURANG
+	breq CALCULATE_KURANG
+
+	cpi OPERATOR, 3	; Check if OPERATOR = KALI
+	breq CALCULATE_KALI
+
+	;cpi OPERATOR, 4	; Check if OPERATOR = BAGI
+	;breq CALCULATE_BAGI
+
+CALCULATE_TAMBAH:
+	ldi OPERATOR, 0
+	mov RESULT, USEDOPERAND1
+	add RESULT, USEDOPERAND2
+	rjmp EXIT
+
+CALCULATE_KURANG:
+	ldi OPERATOR, 0
+	mov RESULT, USEDOPERAND1
+	sub RESULT, USEDOPERAND2
+	rjmp EXIT
+
+CALCULATE_KALI:
+	ldi OPERATOR, 0
+	mov RESULT, USEDOPERAND1
+	mul RESULT, USEDOPERAND2
+	mov RESULT, r0
+	rjmp EXIT
+
+;CALCULATE_BAGI:
+;	nop
 
 EXT_INT0:
 	ldi r20, 1
