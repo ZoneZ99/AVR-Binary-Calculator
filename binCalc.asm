@@ -12,7 +12,7 @@
 ;=====================================================
 
 ;=====================================================
-; KNOWN BUGS
+; KNOWN ISSUE
 ; - Register can only hold 127 signed decimal from input
 ;	Ex: 1111 1111 is saved as 127 signed, because
 ;	S flag in SREG is turned on. Nevertheless,
@@ -206,6 +206,9 @@ ACTIVATE_SEI:
 EXIT:	
 	in 		temp, PINC
 
+	cpi		temp, 0b00000010	; Check if "CLEAR" button is pressed
+	breq	CLEAR_ALL	
+
 	cpi 	temp, 0b00000100	; Check if "+" button is pressed
 	breq 	ACTIVATE_TAMBAH_LED
 
@@ -223,8 +226,18 @@ EXIT:
 
 	rjmp 	EXIT
 
+CLEAR_ALL:
+	clr		USEDOPERAND1
+	clr		USEDOPERAND2
+	clr		RESULT
+	clr		NUMBEROFBIT
+	clr		r20
+	rcall	CLEAR_LCD
+	rcall	CURSOR_SHIFT_LEFT
+	rjmp	EXIT
+
 ACTIVATE_TAMBAH_LED:
-	;add 	USEDOPERAND1, USEDOPERAND2
+	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000001
 	ldi 	OPERATOR, 1		; OPERATOR 1 = TAMBAH
 	out 	PORTE, temp
