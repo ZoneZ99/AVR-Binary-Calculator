@@ -224,7 +224,7 @@ EXIT:
 	rjmp 	EXIT
 
 ACTIVATE_TAMBAH_LED:
-	add 	USEDOPERAND1, USEDOPERAND2
+	;add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000001
 	ldi 	OPERATOR, 1		; OPERATOR 1 = TAMBAH
 	out 	PORTE, temp
@@ -284,26 +284,36 @@ PROCEED_CALCULATE:
 	breq 	CALCULATE_KALI
 
 	cpi 	OPERATOR, 4		; Check if OPERATOR = BAGI
-	breq 	CALCULATE_BAGI
+	breq 	CALCULATE_BAGI	
 
 CALCULATE_TAMBAH:
 	ldi 	OPERATOR, 0
 	mov 	RESULT, USEDOPERAND1
 	add 	RESULT, USEDOPERAND2
-	rjmp 	EXIT
+	rjmp 	SHOW_RESULT
 
 CALCULATE_KURANG:
 	ldi 	OPERATOR, 0
 	mov 	RESULT, USEDOPERAND1
 	sub 	RESULT, USEDOPERAND2
-	rjmp 	EXIT
+	rjmp 	SHOW_RESULT
 
 CALCULATE_KALI:
 	ldi 	OPERATOR, 0
 	mov 	RESULT, USEDOPERAND1
 	mul 	RESULT, USEDOPERAND2
 	mov 	RESULT, r0
-	rjmp 	EXIT
+	rjmp 	SHOW_RESULT
+
+CALCULATE_BAGI:
+	ldi 	OPERATOR, 0
+	mov 	RESULT, USEDOPERAND1
+	mov 	r3, USEDOPERAND1
+	mov 	r4, USEDOPERAND2
+	mov 	r5, RESULT
+	rcall 	DIVIDE_ROUTINE
+	mov 	RESULT, r0
+	rjmp 	SHOW_RESULT
 
 ; Subroutine to divide two single-byte numbers
 ; Taken from https://sites.google.com/site/avrasmintro/home/2b-basic-math
@@ -311,43 +321,89 @@ CALCULATE_KALI:
 ; - r0 to hold answer
 ; - r2 to hold remainder
 ; - r20 to hold bit counter
-CALCULATE_BAGI:
-	ldi 	OPERATOR, 0
-	mov 	RESULT, USEDOPERAND1
+DIVIDE_ROUTINE:
 
 	DIVIDE:
 		ldi		r20, 9		; Load bit counter
 		sub 	r2, r2		; Clear remainder and carry
-		mov 	r0, RESULT
+		mov 	r0, r5
 	LOOP:
 		rol 	r0			; Shift the answer to the left
 		dec 	r20	
 		breq 	DONE
 		rol 	r2			; Shift the remainder to the left
-		sub 	r2, USEDOPERAND2	; Subtract divisor from the remainder
+		sub 	r2, r4		; Subtract divisor from the remainder
 		brcc 	SKIP		; If the result is negative...
-		add 	r2, USEDOPERAND2	; Reverse the subtraction to try again
+		add 	r2, r4		; Reverse the subtraction to try again
 		clc					; Clear Carry Flag so zero shifted in dividend
 		rjmp 	LOOP
 	SKIP:
 		sec					; Set Carry Flag to be shifted into dividend
 		rjmp 	LOOP
 	DONE:
-		mov		RESULT, r0
-		rjmp 	EXIT
+		ret
+
+; Subroutine that displays the result of the operation to the LCD
+SHOW_RESULT:
+	rcall	CLEAR_LCD
+	rcall 	CURSOR_SHIFT_LEFT
+	
+	ldi		NUMBEROFBIT, 9	; Load bit counter
+	mov		r5, RESULT		; Set RESULT as dividend
+	ldi		r20, 2			; Set 2 as divisor
+	mov		r4,	r20
+	
+	LOOP_DIVIDE:
+		dec		NUMBEROFBIT	
+		brne	CHECK_REMAINDER
+		rjmp	EXIT
+
+	CHECK_REMAINDER:
+		rcall	DIVIDE_ROUTINE
+		mov		r5, r0		; Set the result of the division as dividend of the next loop
+		mov		r20, r2		; Move the temporary remainder (modulo) 
+
+		cpi		r20, 0		; If the modulo is 0...
+		breq	OUTPUT_0	; Output 0 to the LCD
+
+		cpi		r20, 1		; If the modulo is 1...
+		breq	OUTPUT_1	; Output 1 to the LCD
+
+	OUTPUT_0:
+		sbi 	PORTA, 1		; Reg. Select Pin = 1
+		cbi 	PORTA, 2		; Read/Write Pin = 0
+		ldi 	PB, 0x30		; Write 0
+		out 	PORTB, PB
+		sbi 	PORTA, 0		; Enable Pin = 1
+		cbi 	PORTA, 0		; Enable Pin = 0
+		rcall	CURSOR_SHIFT_LEFT
+		rjmp	LOOP_DIVIDE
+
+	OUTPUT_1:
+		sbi 	PORTA, 1		; Reg. Select Pin = 1
+		cbi 	PORTA, 2		; Read/Write Pin = 0
+		ldi 	PB, 0x31		; Write 1
+		out 	PORTB, PB
+		sbi 	PORTA, 0		; Enable Pin = 1
+		cbi 	PORTA, 0		; Enable Pin = 0
+		rcall	CURSOR_SHIFT_LEFT
+		rjmp 	LOOP_DIVIDE
 
 EXT_INT0:
 	ldi 	r20, 1
 	add 	NUMBEROFBIT, r20
+	rcall 	WRITE_0
+	rcall 	CURSOR_SHIFT_LEFT
+	reti
 
+WRITE_0:
 	sbi 	PORTA, 1		; Reg. Select Pin = 1
 	cbi 	PORTA, 2		; Read/Write Pin = 0
 	ldi 	PB, 0x30		; Write 0
 	out 	PORTB, PB
 	sbi 	PORTA, 0		; Enable Pin = 1
 	cbi 	PORTA, 0		; Enable Pin = 0
-	rcall 	CURSOR_SHIFT_LEFT
-	reti
+	ret
 	
 EXT_INT1:
 	ldi 	TEMPOPERAND, 1
