@@ -3,10 +3,10 @@
    <General>
       <Build>2005</Build>
       <Position>
-         <top>142</top>
-         <bottom>606</bottom>
-         <left>899</left>
-         <right>1568</right>
+         <top>97</top>
+         <bottom>561</bottom>
+         <left>632</left>
+         <right>1301</right>
       </Position>
       <StayOnTop>1</StayOnTop>
       <Target>ATmega8515</Target>
@@ -142,9 +142,9 @@
             <Invert>0</Invert>
          </Config>
          <Config index="1">
-            <Name>NEXT</Name>
+            <Name>[INACTIVE]</Name>
             <PortPin>
-               <Port>PORTC</Port>
+               <Port>PORTA</Port>
                <Bit>7</Bit>
             </PortPin>
             <Invert>0</Invert>
