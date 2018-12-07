@@ -34,8 +34,7 @@
 .def RESULT = r15
 .def OPERATOR = r21
 .def NUMBEROFBIT = r22
-.equ operation_number = 30
-
+.def NEXTOPERATION = r17
 
 ;=====================================================
 ; RESET and INTERRUPT VECTORS
@@ -120,10 +119,10 @@ INIT_BUTTONS:
 	out 	DDRE, temp	; Set port E as input
 
 INIT_INTERRUPT:
-	ldi 	r17, 0b11000000
-	out 	GICR, r17
-	ldi 	r17, 0b00001010
-	out 	MCUCR, r17
+	ldi 	temp, 0b11000000
+	out 	GICR, temp
+	ldi 	temp, 0b00001010
+	out 	MCUCR, temp
 
 INIT_LCD_MAIN:
 	rcall 	INIT_LCD
@@ -232,6 +231,7 @@ CLEAR_ALL:
 	clr		RESULT
 	clr		NUMBEROFBIT
 	clr		r20
+	clr		NEXTOPERATION
 	rcall	CLEAR_LCD
 	rcall	CURSOR_SHIFT_LEFT
 	rjmp	EXIT
@@ -240,45 +240,40 @@ ACTIVATE_TAMBAH_LED:
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000001
 	ldi 	OPERATOR, 1		; OPERATOR 1 = TAMBAH
-	out 	PORTE, temp
-	ldi 	USEDOPERAND2, 0
-	rcall 	CLEAR_LCD
-	rcall 	CURSOR_SHIFT_LEFT
-	ldi 	NUMBEROFBIT, 0
-	rjmp 	EXIT
+	rjmp	ACTIVATE_LED
 
 ACTIVATE_KURANG_LED:
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000010
 	ldi 	OPERATOR, 2		; OPERATOR 2 = KURANG
-	out 	PORTE, temp
-	ldi 	USEDOPERAND2, 0
-	rcall 	CLEAR_LCD
-	rcall 	CURSOR_SHIFT_LEFT
-	ldi 	NUMBEROFBIT, 0
-	rjmp 	EXIT
+	rjmp	ACTIVATE_LED
 
 ACTIVATE_KALI_LED:
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000100
 	ldi 	OPERATOR, 3		; OPERATOR 3 = KALI
-	out 	PORTE, temp
-	ldi 	USEDOPERAND2, 0
-	rcall 	CLEAR_LCD
-	rcall 	CURSOR_SHIFT_LEFT
-	ldi 	NUMBEROFBIT, 0
-	rjmp 	EXIT
+	rjmp	ACTIVATE_LED
 
 ACTIVATE_BAGI_LED:
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00001000
 	ldi 	OPERATOR, 4		; OPERATOR 4 = BAGI
-	out 	PORTE, temp
+	rjmp	ACTIVATE_LED
+
+ACTIVATE_LED:
+	out		PORTE, temp
 	ldi 	USEDOPERAND2, 0
-	rcall 	CLEAR_LCD
-	rcall 	CURSOR_SHIFT_LEFT
+	rcall	CLEAR_LCD
+	rcall	CURSOR_SHIFT_LEFT
 	ldi 	NUMBEROFBIT, 0
-	rjmp 	EXIT
+
+	cpi		NEXTOPERATION, 1	; Check if this is the next operation...
+	breq	RESULT_TO_OPERAND1
+	rjmp	EXIT
+
+	RESULT_TO_OPERAND1:		; Set the previous result to operand #1 to be used next
+		mov		USEDOPERAND1, RESULT
+		rjmp	EXIT
 
 PROCEED_CALCULATE:
 	ldi 	temp, 0b00000000
@@ -361,6 +356,7 @@ SHOW_RESULT:
 	rcall	CLEAR_LCD
 	rcall 	CURSOR_SHIFT_LEFT
 	
+	ldi		NEXTOPERATION, 1
 	ldi		NUMBEROFBIT, 9	; Load bit counter
 	mov		r5, RESULT		; Set RESULT as dividend
 	ldi		r20, 2			; Set 2 as divisor
