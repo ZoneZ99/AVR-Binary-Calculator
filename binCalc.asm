@@ -12,11 +12,11 @@
 ;=====================================================
 
 ;=====================================================
-; KNOWN ISSUE
-; - Register can only hold 127 signed decimal from input
+; KNOWN ISSUE (?)
+; - Register can only hold up to 127 signed decimal from input
 ;	Ex: 1111 1111 is saved as 127 signed, because
 ;	S flag in SREG is turned on. Nevertheless,
-;	the result of every operation can hold 255 unsigned 
+;	the result of every operation can hold up to 255 unsigned 
 ;	decimal.
 ;=====================================================
 
@@ -25,16 +25,16 @@
 ;=====================================================
 .include "m8515def.inc"
 .def temp = r16
-.def EW = r23	; PORTA
-.def PB	= r24	; PORTB
-.def A = r25
-.def TEMPOPERAND = r18
-.def USEDOPERAND1 = r14
-.def USEDOPERAND2 = r19
-.def RESULT = r15
-.def OPERATOR = r21
-.def NUMBEROFBIT = r22
+.def PB	= r24			; PORTB
+.def A = r25	
+.def TEMPOPERAND = r18	; Stores temporary operand used in calculation
+.def USEDOPERAND1 = r14	; Stores operand #1
+.def USEDOPERAND2 = r19	; Stores operand #2
+.def RESULT = r15		; Stores result of any operation
+.def OPERATOR = r21		; Stores type of operation
+.def NUMBEROFBIT = r22	; Stores number of bit
 .def NEXTOPERATION = r17
+.equ TIMECOUNTER = 155
 
 ;=====================================================
 ; RESET and INTERRUPT VECTORS
@@ -45,6 +45,8 @@ rjmp 	MAIN
 rjmp 	EXT_INT0
 .org 	$02
 rjmp	EXT_INT1
+.org	$07
+rjmp	ISR_TOV0
 
 
 ;=====================================================
@@ -143,7 +145,7 @@ INIT_LCD:
 	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
 	cbi 	PORTA, 1	; Reg. Select Pin = 0
-	ldi 	PB, 0x0E	; Display ON, cursor ON, blink OFF
+	ldi 	PB, 0b00001111	; Display ON, cursor ON, blink ON
 	out 	PORTB, PB
 	sbi 	PORTA, 0	; Enable Pin = 1
 	cbi 	PORTA, 0	; Enable Pin = 0
@@ -157,23 +159,39 @@ INIT_LCD:
 	;rcall DELAY_01
 	ret
 
-
 INPUT_WELCOME:			; Write opening text to LCD
 	ldi 	ZH, high(2*opening)
 	ldi 	ZL, low(2*opening)
 
 	rjmp 	LOADBYTE_OPENING
 
+INPUT_CLOSING:
+	ldi		ZH, high(2*closing)
+	ldi		ZL, low(2*closing)
+
+	rjmp	LOADBYTE_CLOSING
+
 LOADBYTE_OPENING:
 	lpm 				; Load byte from program memory to r0
 	
 	tst		r0			; Check if we've reached the end of the message
-	breq DELAY_CALL
+	breq 	DELAY_CALL
 
 	mov 	A, r0		; Put the character into Port B
 	rcall 	WRITE_TEXT
 	adiw 	ZL, 1		; Increment Z registers
 	rjmp 	LOADBYTE_OPENING
+
+LOADBYTE_CLOSING:
+	lpm
+
+	tst		r0
+	breq	EXIT
+
+	mov		A, r0
+	rcall	WRITE_TEXT_CLOSING
+	adiw	ZL, 1
+	rjmp	LOADBYTE_CLOSING
 
 WRITE_TEXT:				; Output text
 	sbi 	PORTA, 1	; Reg. Select Pin = 1
@@ -181,6 +199,13 @@ WRITE_TEXT:				; Output text
 	sbi 	PORTA, 0	; Enable Pin = 1
 	cbi 	PORTA, 0	; Enable Pin = 0
 	;rcall DELAY_01
+	ret
+
+WRITE_TEXT_CLOSING:
+	sbi		PORTA, 1
+	out		PORTB, A
+	sbi		PORTA, 0
+	cbi		PORTA, 0
 	ret
 
 CLEAR_LCD:
@@ -193,17 +218,35 @@ CLEAR_LCD:
 	ret
 
 DELAY_CALL:
+	rcall	INIT_TIMER
+
 	;rcall DELAY_02
 	rcall 	CLEAR_LCD
 	rcall 	CURSOR_SHIFT_LEFT
 	;rcall DELAY_02
 	rjmp 	ACTIVATE_SEI
 
+INIT_TIMER:
+	ldi		r23, TIMECOUNTER
+
+	ldi		temp, (1<<CS02)
+	out		TCCR0, temp
+	ldi		temp, (1<<TOV0)
+	out		TIFR, temp
+	ldi		temp, (1<<TOIE0)
+	out		TIMSK, temp
+	ret
+	
+
 ACTIVATE_SEI:
 	sei
+	rjmp	EXIT
 
 EXIT:	
 	in 		temp, PINC
+
+	;cpi	temp, 0b00000001
+	;breq	DELETE_BIT
 
 	cpi		temp, 0b00000010	; Check if "CLEAR" button is pressed
 	breq	CLEAR_ALL	
@@ -225,36 +268,53 @@ EXIT:
 
 	rjmp 	EXIT
 
+;DELETE_BIT:
+	;rcall	CURSOR_SHIFT_RIGHT
+	;rjmp	EXIT
+	
+
 CLEAR_ALL:
+	rcall 	CLEAR_DATA
+	rcall	CLEAR_LCD
+	rcall	CURSOR_SHIFT_LEFT
+	rjmp	EXIT
+
+CLEAR_DATA:
 	clr		USEDOPERAND1
 	clr		USEDOPERAND2
 	clr		RESULT
 	clr		NUMBEROFBIT
 	clr		r20
 	clr		NEXTOPERATION
-	rcall	CLEAR_LCD
-	rcall	CURSOR_SHIFT_LEFT
-	rjmp	EXIT
+	ret
 
 ACTIVATE_TAMBAH_LED:
+	rcall	INIT_TIMER
+
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000001
 	ldi 	OPERATOR, 1		; OPERATOR 1 = TAMBAH
 	rjmp	ACTIVATE_LED
 
 ACTIVATE_KURANG_LED:
+	rcall	INIT_TIMER
+
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000010
 	ldi 	OPERATOR, 2		; OPERATOR 2 = KURANG
 	rjmp	ACTIVATE_LED
 
 ACTIVATE_KALI_LED:
+	rcall	INIT_TIMER
+
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00000100
 	ldi 	OPERATOR, 3		; OPERATOR 3 = KALI
 	rjmp	ACTIVATE_LED
 
 ACTIVATE_BAGI_LED:
+	rcall	INIT_TIMER
+
 	add 	USEDOPERAND1, USEDOPERAND2
 	ldi 	temp, 0b00001000
 	ldi 	OPERATOR, 4		; OPERATOR 4 = BAGI
@@ -365,6 +425,7 @@ SHOW_RESULT:
 	LOOP_DIVIDE:
 		dec		NUMBEROFBIT	
 		brne	CHECK_REMAINDER
+		rcall	INIT_TIMER
 		rjmp	EXIT
 
 	CHECK_REMAINDER:
@@ -422,6 +483,18 @@ EXT_INT1:
 	ldi 	USEDOPERAND2, 1
 	rjmp 	WRITE_1
 
+ISR_TOV0:
+	dec		r23
+	breq	THROW_TIMER
+	reti
+
+THROW_TIMER:
+	rcall	INIT_LCD
+	rcall	CLEAR_DATA
+	rcall	INPUT_CLOSING
+	cli
+	rjmp	EXIT
+	
 ; Subroutine to add 2^n to OPERAND if n > 1
 POWER_OF_TWO:
 	lsl 	TEMPOPERAND		; Multiply by two
@@ -474,8 +547,21 @@ CURSOR_SHIFT_LEFT:
 
 	ret	
 
+;CURSOR_SHIFT_RIGHT:
+	;cbi 	PORTA, 1		; Reg. Select Pin = 0
+	;cbi 	PORTA, 2		; Read/Write Pin = 0
+	;ldi 	PB, 0b00010100 	; Shift cursor to the right
+	;out 	PORTB, PB
+	;sbi 	PORTA, 0		; Enable Pin = 1
+	;cbi 	PORTA, 0		; Enable Pin = 0
+	;ret
+	
+
 ;=====================================================
 ; DATA
 ;=====================================================
 opening:
 .db "Welcome to Binary Calculator!", 0
+
+closing:
+.db	"BYE BYE!", 0
