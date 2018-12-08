@@ -27,14 +27,14 @@
 .def temp = r16
 .def PB	= r24			; PORTB
 .def A = r25	
-.def TEMPOPERAND = r18	; Stores temporary operand used in calculation
-.def USEDOPERAND1 = r14	; Stores operand #1
-.def USEDOPERAND2 = r19	; Stores operand #2
-.def RESULT = r15		; Stores result of any operation
-.def OPERATOR = r21		; Stores type of operation
-.def NUMBEROFBIT = r22	; Stores number of bit
-.def NEXTOPERATION = r17
-.equ TIMECOUNTER = 155
+.def TEMPOPERAND = r18		; Stores temporary operand used in calculation
+.def USEDOPERAND1 = r14		; Stores operand #1
+.def USEDOPERAND2 = r19		; Stores operand #2
+.def RESULT = r15			; Stores result of any operation
+.def OPERATOR = r21			; Stores type of operation
+.def NUMBEROFBIT = r22		; Stores number of bit
+.def NEXTOPERATION = r17	; "Flag" that indicates whether the first operation has occured
+.equ TIMECOUNTER = 155		; To make the timer longer, around 30 secs.
 
 ;=====================================================
 ; RESET and INTERRUPT VECTORS
@@ -165,7 +165,7 @@ INPUT_WELCOME:			; Write opening text to LCD
 
 	rjmp 	LOADBYTE_OPENING
 
-INPUT_CLOSING:
+INPUT_CLOSING:			; Write closing text to LCD
 	ldi		ZH, high(2*closing)
 	ldi		ZL, low(2*closing)
 
@@ -183,14 +183,14 @@ LOADBYTE_OPENING:
 	rjmp 	LOADBYTE_OPENING
 
 LOADBYTE_CLOSING:
-	lpm
-
-	tst		r0
+	lpm					; Load byte from program memory to r0
+	
+	tst		r0			; Check if we've reached the end of the message
 	breq	EXIT
 
-	mov		A, r0
+	mov		A, r0		; Put the character into Port B
 	rcall	WRITE_TEXT_CLOSING
-	adiw	ZL, 1
+	adiw	ZL, 1		; Increment Z registers
 	rjmp	LOADBYTE_CLOSING
 
 WRITE_TEXT:				; Output text
@@ -198,14 +198,15 @@ WRITE_TEXT:				; Output text
 	out 	PORTB, A	
 	sbi 	PORTA, 0	; Enable Pin = 1
 	cbi 	PORTA, 0	; Enable Pin = 0
-	;rcall DELAY_01
+	rcall 	DELAY_01
 	ret
 
-WRITE_TEXT_CLOSING:
-	sbi		PORTA, 1
+WRITE_TEXT_CLOSING:		; Output text
+	sbi		PORTA, 1	; Reg. Select Pin = 1
 	out		PORTB, A
-	sbi		PORTA, 0
-	cbi		PORTA, 0
+	sbi		PORTA, 0	; Enable Pin = 1
+	cbi		PORTA, 0	; Enable Pin = 0
+	rcall	DELAY_01
 	ret
 
 CLEAR_LCD:
@@ -220,10 +221,14 @@ CLEAR_LCD:
 DELAY_CALL:
 	rcall	INIT_TIMER
 
-	;rcall DELAY_02
+	rcall 	DELAY_02
 	rcall 	CLEAR_LCD
 	rcall 	CURSOR_SHIFT_LEFT
-	;rcall DELAY_02
+	rcall 	DELAY_02
+	
+	ldi		r18, 0		; Clear value from previous delay call
+	ldi		r19, 0		; Clear value from previous delay call
+
 	rjmp 	ACTIVATE_SEI
 
 INIT_TIMER:
@@ -237,13 +242,12 @@ INIT_TIMER:
 	out		TIMSK, temp
 	ret
 	
-
 ACTIVATE_SEI:
 	sei
 	rjmp	EXIT
 
 EXIT:	
-	in 		temp, PINC
+	in 		temp, PINC			; Get input value from PINC
 
 	;cpi	temp, 0b00000001
 	;breq	DELETE_BIT
@@ -271,7 +275,6 @@ EXIT:
 ;DELETE_BIT:
 	;rcall	CURSOR_SHIFT_RIGHT
 	;rjmp	EXIT
-	
 
 CLEAR_ALL:
 	rcall 	CLEAR_DATA
@@ -320,7 +323,7 @@ ACTIVATE_BAGI_LED:
 	ldi 	OPERATOR, 4		; OPERATOR 4 = BAGI
 	rjmp	ACTIVATE_LED
 
-ACTIVATE_LED:
+ACTIVATE_LED:				; General routine for activating label
 	out		PORTE, temp
 	ldi 	USEDOPERAND2, 0
 	rcall	CLEAR_LCD
@@ -459,7 +462,7 @@ SHOW_RESULT:
 		rcall	CURSOR_SHIFT_LEFT
 		rjmp 	LOOP_DIVIDE
 
-EXT_INT0:
+EXT_INT0:					; Handle for Interrupt0 (when button 0 is pressed)
 	ldi 	r20, 1
 	add 	NUMBEROFBIT, r20
 	rcall 	WRITE_0
@@ -475,25 +478,13 @@ WRITE_0:
 	cbi 	PORTA, 0		; Enable Pin = 0
 	ret
 	
-EXT_INT1:
+EXT_INT1:					; Handle for Interrupt1 (when button 1 is pressed)
 	ldi 	TEMPOPERAND, 1
 	add 	r20, NUMBEROFBIT
 	cpi 	NUMBEROFBIT, 0	; Check if the input bit is the zero bit
 	brne 	POWER_OF_TWO	; If not, add 2^n to OPERAND
 	ldi 	USEDOPERAND2, 1
 	rjmp 	WRITE_1
-
-ISR_TOV0:
-	dec		r23
-	breq	THROW_TIMER
-	reti
-
-THROW_TIMER:
-	rcall	INIT_LCD
-	rcall	CLEAR_DATA
-	rcall	INPUT_CLOSING
-	cli
-	rjmp	EXIT
 	
 ; Subroutine to add 2^n to OPERAND if n > 1
 POWER_OF_TWO:
@@ -519,6 +510,18 @@ WRITE_1:
 
 	rcall 	CURSOR_SHIFT_LEFT
 	reti
+
+ISR_TOV0:					; Handle timer when it overflows
+	dec		r23				; If the real-time timer has reached 30 seconds...
+	breq	THROW_TIMER		; Jump to THROW_TIMER
+	reti
+
+THROW_TIMER:				; Handle when the timer has reached 30 seconds
+	rcall	INIT_LCD
+	rcall	CLEAR_DATA
+	rcall	INPUT_CLOSING
+	cli
+	rjmp	EXIT
 
 CURSOR_SHIFT_LEFT:
 	cbi 	PORTA, 1		; Reg. Select Pin = 0
